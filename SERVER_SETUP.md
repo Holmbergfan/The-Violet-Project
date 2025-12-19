@@ -72,14 +72,39 @@ The Violet Project game server has been successfully set up and is now running.
 
 ## Client Connection
 
+### Connection Details
+- **Server IP**: Use `10.1.0.72` (or the public IP if exposed)
+- **Login Port**: 7171
+- **Game Port**: 7172
+- **Protocol**: 7.72
+
+### Supported Clients
+
 Users can connect using:
 - **Tibia 7.72 Client** with IP changer pointing to this server's IP
 - **OTClient** configured for protocol 7.72
 
-To connect, players need to:
-1. Set the server IP to the machine's public/private IP address
-2. Use port 7171 for login
-3. Create an account in the database or use the web interface (Znote AAC)
+### How to Connect
+
+1. **Using Original Tibia 7.72 Client with IP Changer**:
+   - Download a Tibia 7.72 client
+   - Use an IP changer tool to redirect connections to `10.1.0.72`
+   - Launch the client and login
+
+2. **Using OTClient**:
+   - Download OTClient
+   - Configure for protocol 7.72
+   - Add server with IP: `10.1.0.72` and port: `7171`
+   - Connect and login
+
+3. **Create an Account**:
+   - Use the Znote AAC web interface (see Next Steps section)
+   - Or manually create an account in the MySQL database:
+     ```sql
+     INSERT INTO accounts (name, password) VALUES ('test', SHA1('test'));
+     INSERT INTO players (name, account_id, level, vocation, health, healthmax, mana, manamax, looktype, lookbody, lookfeet, lookhead, looklegs, maglevel, cap, town_id, posx, posy, posz) 
+     VALUES ('Test Character', 1, 8, 0, 185, 185, 40, 40, 136, 114, 94, 78, 58, 0, 470, 1, 32369, 32241, 7);
+     ```
 
 ## Notes
 
