@@ -1,10 +1,4 @@
 ---
-# Fill in the fields below to create a basic custom agent for your repository.
-# The Copilot CLI can be used for local testing: https://gh.io/customagents/cli
-# To make this agent available, merge this file into the default repository branch.
-# For format details, see: https://gh.io/customagents/config
-
----
 name: Violetta
 description: Expert coding agent for The Violet Project - a Tibia 7.72 Open Tibia Server (OTServer) with game server (C++/Lua), Znote AAC web interface (PHP), map editor, and item editor.
 ---
@@ -62,7 +56,10 @@ end
 
 action:id(ITEM_ID)  -- or action:aid(ACTION_ID)
 action:register()
+```
 
+### Revscript Spells
+```lua
 local spell = Spell(SPELL_INSTANT)  -- or SPELL_RUNE
 
 function spell.onCastSpell(creature, variant)
@@ -76,7 +73,10 @@ spell:name("Spell Name")
 spell:words("spell words")
 spell:vocation("Sorcerer", "Master Sorcerer")
 spell:register()
+```
 
+### TalkActions
+```lua
 local talkaction = TalkAction("/command", "!command")
 
 function talkaction.onSay(player, words, param)
@@ -86,7 +86,10 @@ end
 
 talkaction:separator(" ")
 talkaction:register()
+```
 
+### CreatureEvents
+```lua
 local creatureevent = CreatureEvent("EventName")
 
 function creatureevent.onLogin(player)
@@ -95,55 +98,66 @@ function creatureevent.onLogin(player)
 end
 
 creatureevent:register()
+```
 
-NPC Behavior Files (.npc)
-NPCs use a custom behavior DSL in data/npc/behavior/:
+### NPC Behavior Files (`.npc`)
+NPCs use a custom behavior DSL in `data/npc/behavior/`:
+- ADDRESS/BUSY/VANISH for state handling
+- Trading syntax: `Type=ID, Amount=N, Price=P`
+- Keywords trigger responses with `-> "response text"`
 
-ADDRESS/BUSY/VANISH for state handling
-Trading syntax: Type=ID, Amount=N, Price=P
-Keywords trigger responses with -> "response text"
-Key API Functions
-Player
-player:getLevel(), player:getVocation(), player:getMana()
-player:addItem(itemId, count), player:removeItem(itemId, count)
-player:teleportTo(position), player:getPosition()
-player:sendTextMessage(type, message)
-player:getStorageValue(key), player:setStorageValue(key, value)
-player:getGroup():getAccess() - check admin access
-Creature/Monster
-creature:getHealth(), creature:setHealth(value)
-creature:getName(), creature:getPosition()
-Game.createMonster(name, position)
-Item
-item:getId(), item:getCount()
-item:transform(newId), item:decay()
-item:getPosition():sendMagicEffect(effect)
-Game
-Game.createItem(itemId, count, position)
-Game.getExperienceStage(level)
-Game.setGameState(state)
-Game.reload(reloadType)
-Position
-Position(x, y, z) or {x = x, y = y, z = z}
-position:sendMagicEffect(effectId)
-position:getNextPosition(direction, steps)
-Configuration Reference
-Server Config (config.lua.dist)
-Key settings: serverName, ip, loginPort, gamePort, mysqlHost/User/Pass/Database, experience/skill/loot rates, world type, PvP settings
+## Key API Functions
 
-Web Config (znote/htdocs/config.php)
-Key settings: $config['ServerEngine'] (TFS_10), database settings, site settings, shop configuration
+### Player
+- `player:getLevel()`, `player:getVocation()`, `player:getMana()`
+- `player:addItem(itemId, count)`, `player:removeItem(itemId, count)`
+- `player:teleportTo(position)`, `player:getPosition()`
+- `player:sendTextMessage(type, message)`
+- `player:getStorageValue(key)`, `player:setStorageValue(key, value)`
+- `player:getGroup():getAccess()` - check admin access
 
-Best Practices
-Tibia 7.72 Compatibility: This server targets client version 7.72 - be aware of version-specific limitations
-Storage Values: Use data/lib/core/storages.lua for storage key management
-Item IDs: Reference data/items/items.xml and items.otb for valid item IDs
-Effect Constants: Use CONST_ME_* for magic effects, CONST_ANI_* for distance effects
-Message Types: Use MESSAGE_STATUS_CONSOLE_BLUE for player messages
-Access Levels: Check player:getAccountType() against ACCOUNT_TYPE_GOD, ACCOUNT_TYPE_GAMEMASTER, etc.
-File Naming Conventions
-Lua scripts: lowercase with underscores (my_script.lua)
-NPC XMLs: lowercase with spaces allowed (al dee.xml)
-Monster XMLs: Title Case (Dragon Lord.xml)
+### Creature/Monster
+- `creature:getHealth()`, `creature:setHealth(value)`
+- `creature:getName()`, `creature:getPosition()`
+- `Game.createMonster(name, position)`
+
+### Item
+- `item:getId()`, `item:getCount()`
+- `item:transform(newId)`, `item:decay()`
+- `item:getPosition():sendMagicEffect(effect)`
+
+### Game
+- `Game.createItem(itemId, count, position)`
+- `Game.getExperienceStage(level)`
+- `Game.setGameState(state)`
+- `Game.reload(reloadType)`
+
+### Position
+- `Position(x, y, z)` or `{x = x, y = y, z = z}`
+- `position:sendMagicEffect(effectId)`
+- `position:getNextPosition(direction, steps)`
+
+## Configuration Reference
+
+### Server Config (`config.lua.dist`)
+Key settings: `serverName`, `ip`, `loginPort`, `gamePort`, `mysqlHost/User/Pass/Database`, experience/skill/loot rates, world type, PvP settings
+
+### Web Config (`znote/htdocs/config.php`)
+Key settings: `$config['ServerEngine']` (TFS_10), database settings, site settings, shop configuration
+
+## Best Practices
+
+1. **Tibia 7.72 Compatibility**: This server targets client version 7.72 - be aware of version-specific limitations
+2. **Storage Values**: Use `data/lib/core/storages.lua` for storage key management
+3. **Item IDs**: Reference `data/items/items.xml` and `items.otb` for valid item IDs
+4. **Effect Constants**: Use `CONST_ME_*` for magic effects, `CONST_ANI_*` for distance effects
+5. **Message Types**: Use `MESSAGE_STATUS_CONSOLE_BLUE` for player messages
+6. **Access Levels**: Check `player:getAccountType()` against `ACCOUNT_TYPE_GOD`, `ACCOUNT_TYPE_GAMEMASTER`, etc.
+
+## File Naming Conventions
+
+- Lua scripts: lowercase with underscores (`my_script.lua`)
+- NPC XMLs: lowercase with spaces allowed (`al dee.xml`)
+- Monster XMLs: Title Case (`Dragon Lord.xml`)
 
 When helping with this project, always consider the interaction between the C++ engine, Lua scripting layer, and database schema. Prefer revscript-style Lua when creating new scripts.
