@@ -1,0 +1,96 @@
+╔════════════════════════════════════════════════════════════════╗
+║          THE VIOLET PROJECT - SERVER IS NOW RUNNING!          ║
+╚════════════════════════════════════════════════════════════════╝
+
+✓ MySQL Server: RUNNING
+✓ Game Server: RUNNING (PID: 4045)
+✓ Listening on: 0.0.0.0:7171 (Login) and 0.0.0.0:7172 (Game)
+
+═══════════════════════════════════════════════════════════════
+                      CONNECTION DETAILS
+═══════════════════════════════════════════════════════════════
+
+To connect from your local PC with Tibia 7.72 client:
+
+1. Server IP: Check your VPS public IP
+   - Internal IP: 10.1.0.121
+   - You need to use your VPS PUBLIC IP address
+
+2. Login Port: 7171
+3. Game Port: 7172
+
+═══════════════════════════════════════════════════════════════
+                      TEST ACCOUNT DETAILS
+═══════════════════════════════════════════════════════════════
+
+Account Number: 1234570
+Password: test123
+Character: Violet Admin (Level 8 Sorcerer with God/Admin powers)
+
+═══════════════════════════════════════════════════════════════
+                      TIBIA CLIENT SETUP
+═══════════════════════════════════════════════════════════════
+
+You need to configure your Tibia 7.72 client to connect:
+
+Option 1 - IP Changer Tool:
+- Use a Tibia IP changer to set the server IP to your VPS IP
+
+Option 2 - Manual Client Modification:
+- Edit the Tibia.dat file with a hex editor
+- Replace the OTServ login server address
+
+Option 3 - OTClient (Recommended for testing):
+- Use OTClient which supports custom server IPs
+- Add server: IP:7171
+
+═══════════════════════════════════════════════════════════════
+                      SERVER MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+Check Server Status:
+  ps aux | grep tfs
+
+Stop Server:
+  kill $(pgrep tfs)
+
+Restart Server in Foreground (see console output):
+  cd /home/runner/work/The-Violet-Project/The-Violet-Project/gameserver
+  ./tfs
+
+Restart Server in Background with Log File:
+  cd /home/runner/work/The-Violet-Project/The-Violet-Project/gameserver
+  nohup ./tfs > server.log 2>&1 &
+  tail -f server.log  # Monitor the log
+
+Monitor Console with Screen (Recommended):
+  screen -S violet-server
+  cd /home/runner/work/The-Violet-Project/The-Violet-Project/gameserver
+  ./tfs
+  # Press Ctrl+A then D to detach
+  # Reattach: screen -r violet-server
+
+View Server Logs:
+  tail -f /home/runner/work/The-Violet-Project/The-Violet-Project/gameserver/server.log
+
+Database Access:
+  mysql -u tibia -ptibia tibia
+
+For detailed monitoring options, see: SERVER_MONITORING.md
+
+═══════════════════════════════════════════════════════════════
+                      IMPORTANT NOTES
+═══════════════════════════════════════════════════════════════
+
+⚠ Firewall: Ensure ports 7171 and 7172 are open on your VPS firewall
+⚠ The server is configured to accept connections from any IP (0.0.0.0)
+⚠ For production use, consider security hardening
+⚠ The server is running in detached mode and will continue running
+
+═══════════════════════════════════════════════════════════════
+
+Server Location: /home/runner/work/The-Violet-Project/The-Violet-Project/gameserver
+Config File: config.lua
+Map Files: data/map.otbm, data/spawns.xml, data/houses.xml
+
+Enjoy The Violet Project! 🎮
