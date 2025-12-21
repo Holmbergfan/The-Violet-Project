@@ -52,17 +52,31 @@ Check Server Status:
   ps aux | grep tfs
 
 Stop Server:
-  kill 4045
+  kill $(pgrep tfs)
 
-Restart Server:
+Restart Server in Foreground (see console output):
   cd /home/runner/work/The-Violet-Project/The-Violet-Project/gameserver
   ./tfs
 
+Restart Server in Background with Log File:
+  cd /home/runner/work/The-Violet-Project/The-Violet-Project/gameserver
+  nohup ./tfs > server.log 2>&1 &
+  tail -f server.log  # Monitor the log
+
+Monitor Console with Screen (Recommended):
+  screen -S violet-server
+  cd /home/runner/work/The-Violet-Project/The-Violet-Project/gameserver
+  ./tfs
+  # Press Ctrl+A then D to detach
+  # Reattach: screen -r violet-server
+
 View Server Logs:
-  Server outputs to console (currently running detached)
+  tail -f /home/runner/work/The-Violet-Project/The-Violet-Project/gameserver/server.log
 
 Database Access:
   mysql -u tibia -ptibia tibia
+
+For detailed monitoring options, see: SERVER_MONITORING.md
 
 ═══════════════════════════════════════════════════════════════
                       IMPORTANT NOTES
