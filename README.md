@@ -17,7 +17,7 @@ Optional environment variables:
 - `SKIP_APT=1` to skip package installation
 - `SKIP_BUILD=1` to skip compiling the gameserver
 
-The script installs dependencies, bootstraps MySQL, configures `gameserver/config.lua` and `znote/htdocs/config.php`, builds the server binary, and registers a `violet-gameserver` systemd service.
+The script installs dependencies, bootstraps MariaDB, configures `gameserver/config.lua` and `znote/htdocs/config.php`, builds the server binary, and registers a `violet-gameserver` systemd service.
 
 # Thanks to
 The Forgotten Server developers, and to Splinky.

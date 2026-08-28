@@ -87,7 +87,6 @@ write_game_config() {
 import re
 import sys
 from pathlib import Path
-from pathlib import Path
 
 path = Path(sys.argv[1])
 ip, db_host, db_user, db_pass, db_name, db_port, server_name = sys.argv[2:]
@@ -113,6 +112,7 @@ write_aac_config() {
 	python3 - "${AAC_CONFIG}" "${DB_HOST}" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${SERVER_IP}" "${SERVER_NAME}" "${GAMESERVER_DIR}" <<'PY'
 import re
 import sys
+from pathlib import Path
 
 path = Path(sys.argv[1])
 db_host, db_user, db_pass, db_name, server_ip, server_name, gameserver_dir = sys.argv[2:]
