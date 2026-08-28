@@ -6,7 +6,9 @@ In honor of my deceased grandmother, Violeta Morillo.
 ## Quick VPS setup
 Run the automated VPS bootstrap script:
 
-`sudo bash /home/runner/work/The-Violet-Project/The-Violet-Project/scripts/setup_vps.sh`
+From repository root:
+
+`sudo bash scripts/setup_vps.sh`
 
 Optional environment variables:
 - `SERVER_IP` (public/LAN IPv4 for clients)

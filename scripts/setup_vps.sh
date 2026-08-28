@@ -16,11 +16,22 @@ DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 DB_NAME="${DB_NAME:-tibia}"
 DB_USER="${DB_USER:-tibia}"
-DB_PASS="${DB_PASS:-tibia}"
+DB_PASS="${DB_PASS:-}"
 SERVER_IP="${SERVER_IP:-}"
 SERVER_NAME="${SERVER_NAME:-Violet}"
+SERVICE_USER="${SERVICE_USER:-${SUDO_USER:-violet}}"
+SERVICE_GROUP="${SERVICE_GROUP:-${SERVICE_USER}}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 SKIP_APT="${SKIP_APT:-0}"
+
+if [[ -z "${DB_PASS}" ]]; then
+	if command -v openssl >/dev/null 2>&1; then
+		DB_PASS="$(openssl rand -base64 24 | tr -d '\n' | tr -d '\r' | tr '/+' 'ab')"
+	else
+		DB_PASS="$(date +%s%N | sha256sum | cut -c1-32)"
+	fi
+	echo "Generated DB_PASS automatically. Save this password: ${DB_PASS}"
+fi
 
 detect_ip() {
 	if [[ -n "${SERVER_IP}" ]]; then
@@ -76,6 +87,7 @@ write_game_config() {
 import re
 import sys
 from pathlib import Path
+from pathlib import Path
 
 path = Path(sys.argv[1])
 ip, db_host, db_user, db_pass, db_name, db_port, server_name = sys.argv[2:]
@@ -98,13 +110,12 @@ PY
 }
 
 write_aac_config() {
-	python3 - "${AAC_CONFIG}" "${DB_HOST}" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${SERVER_IP}" "${SERVER_NAME}" <<'PY'
+	python3 - "${AAC_CONFIG}" "${DB_HOST}" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${SERVER_IP}" "${SERVER_NAME}" "${GAMESERVER_DIR}" <<'PY'
 import re
 import sys
-from pathlib import Path
 
 path = Path(sys.argv[1])
-db_host, db_user, db_pass, db_name, server_ip, server_name = sys.argv[2:]
+db_host, db_user, db_pass, db_name, server_ip, server_name, gameserver_dir = sys.argv[2:]
 text = path.read_text()
 
 def set_php_scalar(name, value):
@@ -117,10 +128,7 @@ set_php_scalar("sqlPassword", db_pass)
 set_php_scalar("sqlDatabase", db_name)
 set_php_scalar("sqlHost", db_host)
 set_php_scalar("site_url", f"http://{server_ip}")
-set_php_scalar("server_path", str(path.parents[2] / "gameserver"))
-set_php_scalar("client_download", "https://github.com/peonso/otclient772/releases/latest")
-set_php_scalar("client_download_linux", "https://github.com/peonso/otclient772/releases/latest")
-set_php_scalar("client_ip_changer_download", "https://github.com/jo3bingham/tibia-ip-changer/releases/latest")
+set_php_scalar("server_path", gameserver_dir)
 
 text = re.sub(r"(\$config\['client'\]\s*=\s*)\d+;", rf"\g<1>772;", text)
 text = re.sub(r"(\$config\['port'\]\s*=\s*)\d+;", rf"\g<1>7171;", text)
@@ -155,6 +163,16 @@ build_gameserver() {
 }
 
 create_systemd_service() {
+	if ! id -u "${SERVICE_USER}" >/dev/null 2>&1; then
+		useradd --system --create-home --shell /usr/sbin/nologin "${SERVICE_USER}"
+	fi
+	if ! getent group "${SERVICE_GROUP}" >/dev/null 2>&1; then
+		groupadd --system "${SERVICE_GROUP}"
+		usermod -a -G "${SERVICE_GROUP}" "${SERVICE_USER}" || true
+	fi
+
+	chown -R "${SERVICE_USER}:${SERVICE_GROUP}" "${GAMESERVER_DIR}"
+
 	cat >/etc/systemd/system/violet-gameserver.service <<EOF
 [Unit]
 Description=The Violet Project Game Server
@@ -162,6 +180,8 @@ After=network.target mariadb.service
 
 [Service]
 Type=simple
+User=${SERVICE_USER}
+Group=${SERVICE_GROUP}
 WorkingDirectory=${GAMESERVER_DIR}
 ExecStart=${BUILD_DIR}/tfs
 Restart=on-failure
