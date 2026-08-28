@@ -639,9 +639,10 @@
 	// Used for the Downloads page.
 	$config['client'] = 772; // Tibia 7.72
 
-	// Download link to client.
-	$config['client_download'] = 'http://tibiaclient.otslist.eu/download/tibia'. $config['client'] .'.exe';
-	$config['client_download_linux'] = 'http://tibiaclient.otslist.eu/download/tibia'. $config['client'] .'.tgz';
+	// Download links to compatible client tools.
+	$config['client_download'] = 'https://github.com/peonso/otclient772/releases/latest';
+	$config['client_download_linux'] = 'https://github.com/peonso/otclient772/releases/latest';
+	$config['client_ip_changer_download'] = 'https://github.com/jo3bingham/tibia-ip-changer/releases/latest';
 
 	$config['port'] = 7171; // Port number to connect to your OT.
 
