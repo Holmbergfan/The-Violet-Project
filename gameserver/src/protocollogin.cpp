@@ -57,27 +57,27 @@ void ProtocolLogin::getCharacterList(uint32_t accountNumber, const std::string& 
 
 	uint8_t size = std::min<size_t>(std::numeric_limits<uint8_t>::max(), account.characters.size());
 
+	const std::string& configuredIp = g_config.getString(ConfigManager::IP);
+	boost::system::error_code error;
+	boost::asio::ip::address_v4 gameWorldAddress = boost::asio::ip::make_address_v4(configuredIp, error);
+	if (error) {
+		disconnectClient(fmt::format("Invalid game server IP configured: {:s}", configuredIp));
+		return;
+	}
+
+	if (gameWorldAddress.is_loopback()) {
+		boost::asio::ip::address_v4 loginClientAddress(ntohl(getIP()));
+		if (!loginClientAddress.is_loopback()) {
+			disconnectClient("Server IP is set to 127.0.0.1. Please set config.lua ip to a reachable address.");
+			return;
+		}
+	}
+
 	output->addByte(size);
 	for (uint8_t i = 0; i < size; i++) {
 		const std::string& character = account.characters[i];
 		output->addString(character);
 		output->addString(g_config.getString(ConfigManager::SERVER_NAME));
-		const std::string& configuredIp = g_config.getString(ConfigManager::IP);
-		boost::system::error_code error;
-		boost::asio::ip::address_v4 gameWorldAddress = boost::asio::ip::make_address_v4(configuredIp, error);
-		if (error) {
-			disconnectClient(fmt::format("Invalid game server IP configured: {:s}", configuredIp));
-			return;
-		}
-
-		if (gameWorldAddress.is_loopback()) {
-			boost::asio::ip::address_v4 loginClientAddress(ntohl(getIP()));
-			if (!loginClientAddress.is_loopback()) {
-				disconnectClient("Server IP is set to 127.0.0.1. Please set config.lua ip to a reachable address.");
-				return;
-			}
-		}
-
 		output->add<uint32_t>(htonl(gameWorldAddress.to_uint()));
 		output->add<uint16_t>(g_config.getNumber(ConfigManager::GAME_PORT));
 	}
