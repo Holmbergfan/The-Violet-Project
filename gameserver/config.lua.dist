@@ -6,6 +6,8 @@
 -- Connection Settings --
 -------------------------
 -- maxPlayers: set to 0 for no limit
+-- Keep 127.0.0.1 only for local testing on the same machine as the client.
+-- Use your LAN/public IPv4 here when players connect from other machines.
 ip = "127.0.0.1"
 bindOnlyGlobalAddress = false
 loginProtocolPort = 7171

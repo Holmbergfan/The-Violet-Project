@@ -637,7 +637,7 @@
 
 	// What client version and server port are you using on this OT?
 	// Used for the Downloads page.
-	$config['client'] = 1098; // 954 = client 9.54
+	$config['client'] = 772; // Tibia 7.72
 
 	// Download link to client.
 	$config['client_download'] = 'http://tibiaclient.otslist.eu/download/tibia'. $config['client'] .'.exe';
@@ -652,11 +652,11 @@
 	);
 
 	// Gameserver info is used for client 11+ loginWebService
-	$config['login_web_service'] = true; // loginWebService for client 11+ enabled?
+	$config['login_web_service'] = false; // keep disabled for Tibia 7.72 login flow
 	$config['gameserver'] = array(
 		'ip' => '127.0.0.1',
 		'port' => 7172,
-		'name' => 'Forgotten' // Must be identical to config.lua (OT config file) server name.
+		'name' => 'Violet' // Must be identical to config.lua (OT config file) server name.
 	);
 	// Unlock all protocol 12 client features? Free premium in config.lua? Then set this to true.
 	$config['freePremium'] = true;
