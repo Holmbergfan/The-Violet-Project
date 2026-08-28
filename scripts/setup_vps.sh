@@ -24,6 +24,16 @@ SERVICE_GROUP="${SERVICE_GROUP:-${SERVICE_USER}}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 SKIP_APT="${SKIP_APT:-0}"
 
+if [[ ! "${DB_USER}" =~ ^[A-Za-z0-9_]+$ ]]; then
+	echo "DB_USER may only contain letters, numbers, and underscores."
+	exit 1
+fi
+
+if [[ ! "${DB_NAME}" =~ ^[A-Za-z0-9_]+$ ]]; then
+	echo "DB_NAME may only contain letters, numbers, and underscores."
+	exit 1
+fi
+
 if [[ -z "${DB_PASS}" ]]; then
 	if command -v openssl >/dev/null 2>&1; then
 		DB_PASS="$(openssl rand -hex 24)"

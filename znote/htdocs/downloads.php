@@ -10,7 +10,7 @@
 <h2>How to connect and play:</h2>
 <ol>
 	<li>
-		<a href="<?php echo $config['client_download']; ?>">Download</a> and install the client if you havent already.
+		<a href="<?php echo $config['client_download']; ?>">Download</a> and install the client if you haven't already.
 	</li>
 	<li>
 		If your client needs it, <a href="<?php echo isset($config['client_ip_changer_download']) ? $config['client_ip_changer_download'] : 'https://github.com/jo3bingham/tibia-ip-changer/releases/latest'; ?>">download</a> and run the IP changer.
