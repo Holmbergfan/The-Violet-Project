@@ -38,15 +38,17 @@ if [[ -z "${DB_PASS}" ]]; then
 	if command -v openssl >/dev/null 2>&1; then
 		DB_PASS="$(openssl rand -hex 24)"
 	else
-		DB_PASS="$(date +%s%N | sha256sum | cut -c1-32)"
+		DB_PASS="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)"
 	fi
-	umask 077
 	creds_file="/root/.violet-db-credentials"
-	{
-		echo "DB_NAME=${DB_NAME}"
-		echo "DB_USER=${DB_USER}"
-		echo "DB_PASS=${DB_PASS}"
-	} > "${creds_file}"
+	(
+		umask 077
+		{
+			echo "DB_NAME=${DB_NAME}"
+			echo "DB_USER=${DB_USER}"
+			echo "DB_PASS=${DB_PASS}"
+		} > "${creds_file}"
+	)
 	echo "Generated DB_PASS automatically and saved it to ${creds_file}."
 fi
 
