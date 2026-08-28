@@ -26,11 +26,18 @@ SKIP_APT="${SKIP_APT:-0}"
 
 if [[ -z "${DB_PASS}" ]]; then
 	if command -v openssl >/dev/null 2>&1; then
-		DB_PASS="$(openssl rand -base64 24 | tr -d '\n' | tr -d '\r' | tr '/+' 'ab')"
+		DB_PASS="$(openssl rand -hex 24)"
 	else
 		DB_PASS="$(date +%s%N | sha256sum | cut -c1-32)"
 	fi
-	echo "Generated DB_PASS automatically. Save this password: ${DB_PASS}"
+	umask 077
+	creds_file="/root/.violet-db-credentials"
+	{
+		echo "DB_NAME=${DB_NAME}"
+		echo "DB_USER=${DB_USER}"
+		echo "DB_PASS=${DB_PASS}"
+	} > "${creds_file}"
+	echo "Generated DB_PASS automatically and saved it to ${creds_file}."
 fi
 
 detect_ip() {
@@ -83,18 +90,21 @@ write_game_config() {
 		cp "${GAMESERVER_DIR}/config.lua.dist" "${GAME_CONFIG}"
 	fi
 
-	python3 - "${GAME_CONFIG}" "${SERVER_IP}" "${DB_HOST}" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${DB_PORT}" "${SERVER_NAME}" <<'PY'
+	VIOLET_DB_PASS="${DB_PASS}" python3 - "${GAME_CONFIG}" "${SERVER_IP}" "${DB_HOST}" "${DB_USER}" "${DB_NAME}" "${DB_PORT}" "${SERVER_NAME}" <<'PY'
 import re
 import sys
 from pathlib import Path
+import os
 
 path = Path(sys.argv[1])
-ip, db_host, db_user, db_pass, db_name, db_port, server_name = sys.argv[2:]
+ip, db_host, db_user, db_name, db_port, server_name = sys.argv[2:]
+db_pass = os.environ.get("VIOLET_DB_PASS", "")
 text = path.read_text()
 
 def repl(key, value):
     global text
-    text = re.sub(rf'^{re.escape(key)}\s*=.*$', f'{key} = "{value}"', text, flags=re.MULTILINE)
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    text = re.sub(rf'^{re.escape(key)}\s*=.*$', f'{key} = "{escaped}"', text, flags=re.MULTILINE)
 
 repl("ip", ip)
 repl("mysqlHost", db_host)
@@ -109,19 +119,22 @@ PY
 }
 
 write_aac_config() {
-	python3 - "${AAC_CONFIG}" "${DB_HOST}" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${SERVER_IP}" "${SERVER_NAME}" "${GAMESERVER_DIR}" <<'PY'
+	VIOLET_DB_PASS="${DB_PASS}" python3 - "${AAC_CONFIG}" "${DB_HOST}" "${DB_USER}" "${DB_NAME}" "${SERVER_IP}" "${SERVER_NAME}" "${GAMESERVER_DIR}" <<'PY'
 import re
 import sys
 from pathlib import Path
+import os
 
 path = Path(sys.argv[1])
-db_host, db_user, db_pass, db_name, server_ip, server_name, gameserver_dir = sys.argv[2:]
+db_host, db_user, db_name, server_ip, server_name, gameserver_dir = sys.argv[2:]
+db_pass = os.environ.get("VIOLET_DB_PASS", "")
 text = path.read_text()
 
 def set_php_scalar(name, value):
     global text
+    escaped = value.replace("\\", "\\\\").replace("'", "\\'")
     pattern = rf"(\$config\['{re.escape(name)}'\]\s*=\s*)'[^']*';"
-    text = re.sub(pattern, rf"\1'{value}';", text)
+    text = re.sub(pattern, rf"\1'{escaped}';", text)
 
 set_php_scalar("sqlUser", db_user)
 set_php_scalar("sqlPassword", db_pass)
