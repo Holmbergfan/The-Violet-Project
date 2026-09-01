@@ -54,7 +54,7 @@ generate_credentials_if_missing() {
 	if command -v openssl >/dev/null 2>&1; then
 		DB_PASS="$(openssl rand -hex 24)"
 	else
-		DB_PASS="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)"
+		DB_PASS="$(set +o pipefail; tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)"
 	fi
 	local creds_file="/root/.violet-db-credentials"
 	(
