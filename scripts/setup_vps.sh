@@ -42,7 +42,7 @@ fi
 read_existing_credentials() {
 	local creds_file="/root/.violet-db-credentials"
 	if [[ -z "${DB_PASS}" && -f "${creds_file}" ]]; then
-		DB_PASS="$(awk -F= '/^DB_PASS=/{print substr($0,9)}' "${creds_file}" | tail -n 1)"
+		DB_PASS="$(awk '/^DB_PASS=/{print substr($0,9)}' "${creds_file}" | tail -n 1)"
 	fi
 }
 
@@ -110,7 +110,8 @@ install_packages() {
 }
 
 bootstrap_database() {
-	local db_pass_sql="${DB_PASS//\'/\'\'}"
+	local db_pass_sql="${DB_PASS//\\/\\\\}"
+	db_pass_sql="${db_pass_sql//\'/\'\'}"
 	mariadb -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;"
 	mariadb -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${db_pass_sql}';"
 	mariadb -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${db_pass_sql}';"
