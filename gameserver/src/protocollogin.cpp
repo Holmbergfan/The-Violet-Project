@@ -61,14 +61,16 @@ void ProtocolLogin::getCharacterList(uint32_t accountNumber, const std::string& 
 	boost::system::error_code error;
 	boost::asio::ip::address_v4 gameWorldAddress = boost::asio::ip::make_address_v4(configuredIp, error);
 	if (error) {
-		disconnectClient(fmt::format("Invalid game server IP configured: {:s}", configuredIp));
+		std::cout << "[Warning - ProtocolLogin::getCharacterList] Invalid game server IP configured: " << configuredIp << std::endl;
+		disconnectClient("Server configuration error. Please contact the administrator.");
 		return;
 	}
 
 	if (gameWorldAddress.is_loopback()) {
 		boost::asio::ip::address_v4 loginClientAddress(ntohl(getIP()));
 		if (!loginClientAddress.is_loopback()) {
-			disconnectClient("Server IP is set to 127.0.0.1. Please set config.lua ip to a reachable address.");
+			std::cout << "[Warning - ProtocolLogin::getCharacterList] Loopback game server IP configured for a remote client." << std::endl;
+			disconnectClient("Server configuration error. Please contact the administrator.");
 			return;
 		}
 	}

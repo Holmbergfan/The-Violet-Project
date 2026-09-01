@@ -34,7 +34,7 @@ if [[ ! "${DB_NAME}" =~ ^[A-Za-z0-9_]+$ ]]; then
 	exit 1
 fi
 
-if [[ ! "${DB_HOST}" =~ ^[A-Za-z0-9._%-]+$ ]]; then
+if [[ ! "${DB_HOST}" =~ ^[A-Za-z0-9._-]+$ ]]; then
 	echo "DB_HOST contains unsupported characters."
 	exit 1
 fi
@@ -42,7 +42,7 @@ fi
 read_existing_credentials() {
 	local creds_file="/root/.violet-db-credentials"
 	if [[ -z "${DB_PASS}" && -f "${creds_file}" ]]; then
-		DB_PASS="$(awk '/^DB_PASS=/{print substr($0,9)}' "${creds_file}" | tail -n 1)"
+		DB_PASS="$(grep '^DB_PASS=' "${creds_file}" | tail -n 1 | cut -d= -f2-)"
 	fi
 }
 
@@ -248,6 +248,10 @@ WorkingDirectory=${GAMESERVER_DIR}
 ExecStart=${BUILD_DIR}/tfs
 Restart=on-failure
 RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
 
 [Install]
 WantedBy=multi-user.target
