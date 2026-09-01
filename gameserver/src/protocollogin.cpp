@@ -70,8 +70,6 @@ void ProtocolLogin::getCharacterList(uint32_t accountNumber, const std::string& 
 		boost::asio::ip::address_v4 loginClientAddress(ntohl(getIP()));
 		if (!loginClientAddress.is_loopback()) {
 			std::cout << "[Warning - ProtocolLogin::getCharacterList] Loopback game server IP configured for a remote client." << std::endl;
-			disconnectClient("Server configuration error. Please contact the administrator.");
-			return;
 		}
 	}
 

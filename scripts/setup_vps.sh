@@ -54,7 +54,11 @@ generate_credentials_if_missing() {
 	if command -v openssl >/dev/null 2>&1; then
 		DB_PASS="$(openssl rand -hex 24)"
 	else
-		DB_PASS="$(set +o pipefail; tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)"
+		DB_PASS="$(python3 - <<'PY'
+import secrets
+print(secrets.token_hex(24))
+PY
+)"
 	fi
 	local creds_file="/root/.violet-db-credentials"
 	(
@@ -71,6 +75,11 @@ generate_credentials_if_missing() {
 if [[ -z "${DB_PASS}" ]]; then
 	read_existing_credentials
 	generate_credentials_if_missing
+fi
+
+if [[ ! "${DB_PASS}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+	echo "DB_PASS contains unsupported characters. Use only letters, numbers, dot, underscore, or dash."
+	exit 1
 fi
 
 detect_ip() {
@@ -275,10 +284,8 @@ configure_webserver() {
 	systemctl enable "${php_fpm_service}"
 	systemctl restart "${php_fpm_service}"
 
-	local php_fpm_sock="/run/php/${php_fpm_service%.service}.sock"
-	if [[ ! -S "${php_fpm_sock}" ]]; then
-		php_fpm_sock="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -n 1 || true)"
-	fi
+	local php_fpm_sock
+	php_fpm_sock="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -n 1 || true)"
 	if [[ -z "${php_fpm_sock}" ]]; then
 		echo "Could not find php-fpm socket in /run/php."
 		exit 1
