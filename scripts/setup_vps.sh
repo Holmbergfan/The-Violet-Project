@@ -181,7 +181,7 @@ text = path.read_text()
 def set_php_scalar(name, value):
     global text
     escaped = value.replace("\\", "\\\\").replace("'", "\\'")
-    pattern = rf"(\$config\['{re.escape(name)}'\]\s*=\s*)'[^']*';"
+    pattern = rf"(\$config\['{re.escape(name)}'\]\s*=\s*)(?:'[^']*'|\"[^\"]*\");"
     text = re.sub(pattern, rf"\1'{escaped}';", text)
 
 set_php_scalar("sqlUser", db_user)
@@ -257,10 +257,25 @@ EOF
 }
 
 configure_webserver() {
-	local php_fpm_sock
-	php_fpm_sock="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -n 1 || true)"
+	local php_fpm_service
+	php_fpm_service="$(systemctl list-unit-files "php*-fpm.service" --no-legend 2>/dev/null | awk 'NR==1 {print $1}')"
+	if [[ -z "${php_fpm_service}" ]]; then
+		php_fpm_service="$(systemctl list-unit-files "php-fpm.service" --no-legend 2>/dev/null | awk 'NR==1 {print $1}')"
+	fi
+	if [[ -z "${php_fpm_service}" ]]; then
+		echo "Could not detect php-fpm service."
+		exit 1
+	fi
+
+	systemctl enable "${php_fpm_service}"
+	systemctl restart "${php_fpm_service}"
+
+	local php_fpm_sock="/run/php/${php_fpm_service%.service}.sock"
+	if [[ ! -S "${php_fpm_sock}" ]]; then
+		php_fpm_sock="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -n 1 || true)"
+	fi
 	if [[ -z "${php_fpm_sock}" ]]; then
-		echo "Could not find php-fpm socket in /run/php. Please verify php-fpm installation."
+		echo "Could not find php-fpm socket in /run/php."
 		exit 1
 	fi
 
@@ -294,8 +309,6 @@ EOF
 
 	systemctl enable mariadb
 	systemctl enable nginx
-	systemctl enable "$(basename "${php_fpm_sock%.sock}")"
-	systemctl restart "$(basename "${php_fpm_sock%.sock}")"
 	systemctl restart nginx
 }
 
