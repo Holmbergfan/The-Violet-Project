@@ -20,7 +20,7 @@
 
 	$config['site_title'] = 'Znote AAC';
 	$config['site_title_context'] = 'Because open communities are good communities. :3';
-	$config['site_url'] = "http://demo.znote.eu";
+	$config['site_url'] = "http://127.0.0.1";
 
 	// Path to server folder without "\" (or "/") at the end, ex: C:\Users\Username\Documents\GitHub\forgottenserver
 	$config['server_path'] = '';
@@ -633,7 +633,7 @@
 
 	// Use htaccess rewrite? (basically this makes website.com/username work instead of website.com/characterprofile.php?name=username
 	// Linux users needs to enable mod_rewrite php extention to make it work properly, so set it to false if your lost and using Linux.
-	$config['htwrite'] = true;
+	$config['htwrite'] = false;
 
 	// What client version and server port are you using on this OT?
 	// Used for the Downloads page.

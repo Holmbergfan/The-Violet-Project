@@ -25,7 +25,7 @@ maxPacketsPerSecond = 100
 -----------------------------
 -- MySql Database Settings --
 -----------------------------
-mysqlHost = "127.0.0.1"
+mysqlHost = "localhost"
 mysqlUser = "root"
 mysqlPass = "tibia"
 mysqlDatabase = "tibia"

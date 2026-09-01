@@ -1,4 +1,15 @@
 <?php require_once 'engine/init.php'; include 'layout/overall/header.php'; ?>
+<?php
+$gameHost = $_SERVER['SERVER_NAME'];
+if (isset($config['gameserver']) && isset($config['gameserver']['ip']) && !empty($config['gameserver']['ip'])) {
+	$gameHost = $config['gameserver']['ip'];
+}
+
+$gamePort = $config['port'];
+if (isset($config['gameserver']) && isset($config['gameserver']['port']) && !empty($config['gameserver']['port'])) {
+	$gamePort = (int)$config['gameserver']['port'];
+}
+?>
 
 <h1>Downloads</h1>
 <p>To play The Violet Project, install a 7.72-compatible client.</p>
@@ -16,10 +27,10 @@
 		If your client needs it, <a href="<?php echo isset($config['client_ip_changer_download']) ? $config['client_ip_changer_download'] : 'https://github.com/jo3bingham/tibia-ip-changer/releases/latest'; ?>">download</a> and run the IP changer.
 	</li>
 	<li>
-		In the IP changer, change Client Path to the tibia.exe file where you installed the client.</strong>
+		In the IP changer, change Client Path to the tibia.exe file where you installed the client.
 	</li>
 	<li>
-		In the IP changer, write this in the IP field: <?php echo $_SERVER['SERVER_NAME']; ?>
+		In the IP changer, use host <strong><?php echo htmlspecialchars($gameHost); ?></strong> and port <strong><?php echo (int)$gamePort; ?></strong>.
 	</li>
 	<li>
 		Now you can successfully login on the tibia client and play clicking on <strong>Apply</strong>.<br>

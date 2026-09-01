@@ -12,7 +12,7 @@ AAC_CONFIG="${ROOT_DIR}/znote/htdocs/config.php"
 GAME_CONFIG="${GAMESERVER_DIR}/config.lua"
 BUILD_DIR="${GAMESERVER_DIR}/build"
 
-DB_HOST="${DB_HOST:-127.0.0.1}"
+DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-3306}"
 DB_NAME="${DB_NAME:-tibia}"
 DB_USER="${DB_USER:-tibia}"
@@ -34,13 +34,29 @@ if [[ ! "${DB_NAME}" =~ ^[A-Za-z0-9_]+$ ]]; then
 	exit 1
 fi
 
-if [[ -z "${DB_PASS}" ]]; then
+if [[ ! "${DB_HOST}" =~ ^[A-Za-z0-9._%-]+$ ]]; then
+	echo "DB_HOST contains unsupported characters."
+	exit 1
+fi
+
+read_existing_credentials() {
+	local creds_file="/root/.violet-db-credentials"
+	if [[ -z "${DB_PASS}" && -f "${creds_file}" ]]; then
+		DB_PASS="$(awk -F= '/^DB_PASS=/{print substr($0,9)}' "${creds_file}" | tail -n 1)"
+	fi
+}
+
+generate_credentials_if_missing() {
+	if [[ -n "${DB_PASS}" ]]; then
+		return
+	fi
+
 	if command -v openssl >/dev/null 2>&1; then
 		DB_PASS="$(openssl rand -hex 24)"
 	else
 		DB_PASS="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)"
 	fi
-	creds_file="/root/.violet-db-credentials"
+	local creds_file="/root/.violet-db-credentials"
 	(
 		umask 077
 		{
@@ -50,6 +66,11 @@ if [[ -z "${DB_PASS}" ]]; then
 		} > "${creds_file}"
 	)
 	echo "Generated DB_PASS automatically and saved it to ${creds_file}."
+}
+
+if [[ -z "${DB_PASS}" ]]; then
+	read_existing_credentials
+	generate_credentials_if_missing
 fi
 
 detect_ip() {
@@ -84,16 +105,31 @@ install_packages() {
 		libboost-date-time-dev libboost-system-dev libboost-filesystem-dev libboost-iostreams-dev \
 		libcrypto++-dev libfmt-dev libmariadb-dev libpugixml-dev libluajit-5.1-dev liblua5.1-0-dev \
 		mariadb-server \
-		php-cli php-mysql php-curl php-xml php-mbstring
+		php-cli php-mysql php-curl php-xml php-mbstring php-fpm \
+		nginx
 }
 
 bootstrap_database() {
+	local db_pass_sql="${DB_PASS//\'/\'\'}"
 	mariadb -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;"
-	mariadb -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';"
+	mariadb -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${db_pass_sql}';"
+	mariadb -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${db_pass_sql}';"
+	mariadb -e "ALTER USER '${DB_USER}'@'localhost' IDENTIFIED BY '${db_pass_sql}';"
+	mariadb -e "ALTER USER '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${db_pass_sql}';"
 	mariadb -e "GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost'; FLUSH PRIVILEGES;"
+	mariadb -e "GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'127.0.0.1'; FLUSH PRIVILEGES;"
+	if [[ "${DB_HOST}" != "localhost" && "${DB_HOST}" != "127.0.0.1" ]]; then
+		mariadb -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${db_pass_sql}';"
+		mariadb -e "ALTER USER '${DB_USER}'@'${DB_HOST}' IDENTIFIED BY '${db_pass_sql}';"
+		mariadb -e "GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'${DB_HOST}'; FLUSH PRIVILEGES;"
+	fi
 
 	if ! mariadb "${DB_NAME}" -e "SHOW TABLES LIKE 'accounts';" | grep -q accounts; then
 		mariadb "${DB_NAME}" < "${GAMESERVER_DIR}/schema.sql"
+	fi
+
+	if ! mariadb "${DB_NAME}" -e "SHOW TABLES LIKE 'znote_accounts';" | grep -q znote_accounts; then
+		mariadb "${DB_NAME}" < "${ROOT_DIR}/znote/htdocs/engine/database/znote_schema.sql"
 	fi
 }
 
@@ -220,6 +256,49 @@ EOF
 	systemctl enable violet-gameserver.service
 }
 
+configure_webserver() {
+	local php_fpm_sock
+	php_fpm_sock="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -n 1 || true)"
+	if [[ -z "${php_fpm_sock}" ]]; then
+		echo "Could not find php-fpm socket in /run/php. Please verify php-fpm installation."
+		exit 1
+	fi
+
+	cat >/etc/nginx/sites-available/violet.conf <<EOF
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    root ${ROOT_DIR}/znote/htdocs;
+    index index.php index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.php?\$query_string;
+    }
+
+    location ~ \.php\$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:${php_fpm_sock};
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+EOF
+
+	rm -f /etc/nginx/sites-enabled/default
+	ln -sf /etc/nginx/sites-available/violet.conf /etc/nginx/sites-enabled/violet.conf
+
+	systemctl enable mariadb
+	systemctl enable nginx
+	systemctl enable "$(basename "${php_fpm_sock%.sock}")"
+	systemctl restart "$(basename "${php_fpm_sock%.sock}")"
+	systemctl restart nginx
+}
+
 detect_ip
 install_packages
 bootstrap_database
@@ -227,6 +306,7 @@ write_game_config
 write_aac_config
 build_gameserver
 create_systemd_service
+configure_webserver
 
 echo "VPS setup completed."
 echo "Review ${GAME_CONFIG} and ${AAC_CONFIG}, then start with: systemctl start violet-gameserver"
